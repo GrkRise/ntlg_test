@@ -1,11 +1,12 @@
 package com.rise.grk.kotlin.ntlg_test
 
+import android.annotation.SuppressLint
 import android.graphics.Color
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
+import android.util.Log
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
@@ -15,8 +16,22 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.GsonBuilder
+
+import com.rise.grk.kotlin.ntlg_test.retrofit.RetrofitService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.util.ArrayList
 
 class MainActivity : AppCompatActivity() {
+
+    var itemsArr : ArrayList<Cell> = ArrayList()
+    lateinit var rv : RecyclerView
+    lateinit var adapter: CustomAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,11 +48,11 @@ class MainActivity : AppCompatActivity() {
 
         val dividerItemDecoration = DividerItemDecoration(this, RecyclerView.VERTICAL)
         dividerItemDecoration.setDrawable(this.getDrawable(R.drawable.item_decor)!!)
-
-        val rv = findViewById<RecyclerView>(R.id.list)
+        rv = findViewById<RecyclerView>(R.id.list)
         rv.layoutManager = LinearLayoutManager(this)
-        rv.adapter = CustomAdapter(fillList())
         rv.addItemDecoration(dividerItemDecoration)
+
+        ParseJSON()
 
         findViewById<FloatingActionButton>(R.id.fab).setOnClickListener { view ->
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
@@ -45,10 +60,62 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun fillList() : List<CourseInfo>{
-        val data = mutableListOf<CourseInfo>()
-        (0..30).forEach { i -> data.add(i, CourseInfo(i.toString(), i.toString())) }
-        return data
+//    private fun fillList() : List<CourseInfo>{
+//        val data = mutableListOf<CourseInfo>()
+//        (0..30).forEach { i -> data.add(i, CourseInfo(i.toString(), i.toString())) }
+//        return data
+//    }
+    @SuppressLint("LongLogTag")
+    private fun ParseJSON()
+    {
+        val retrofit = Retrofit.Builder()
+                .baseUrl("https://raw.githubusercontent.com")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+        val service = retrofit.create(RetrofitService::class.java)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val response = service.getdata()
+
+            withContext(Dispatchers.Main){
+                if(response.isSuccessful){
+                    val gson = GsonBuilder().setPrettyPrinting().create()
+                    val prettyJson = gson.toJson(response.body())
+
+                    Log.d("Pretty Printed JSON :", prettyJson)
+
+                    val items = response.body()?.data
+                    if(items != null){
+                        for(i in 0 until items.count()){
+                            val title = items[i].direction!!.title
+
+                            var count = 0
+                            for(j in 0 until items[i].groups!!.count() ){
+                                count +=  items[i].groups!![j].items!!.size
+                            }
+
+                            val color = items[i].direction!!.badge!!.color
+
+
+                            val model = Cell(title, count, color)
+
+                            itemsArr.add(model)
+
+                            adapter = CustomAdapter(itemsArr)
+                            adapter.notifyDataSetChanged()
+                        }
+                    }
+
+                    rv.adapter = adapter
+                }
+
+                else{
+                    Log.e("Retrofit_Error", response.code().toString())
+                }
+            }
+        }
+
+
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
