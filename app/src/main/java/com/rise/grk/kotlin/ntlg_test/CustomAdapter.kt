@@ -32,9 +32,14 @@ class CustomAdapter(private val dataSet : List<Cell>) : RecyclerView.Adapter<Cus
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.textViewTitle.text = dataSet[position].title
 
+        val i = dataSet[position].count % 10
+        when(i){
+            1 -> holder.textViewCount.text = dataSet[position].count.toString().plus(" курс")
+            in 2..4 -> holder.textViewCount.text = dataSet[position].count.toString().plus(" курса")
+            else -> holder.textViewCount.text = dataSet[position].count.toString().plus(" курсов")
+        }
 
 
-        holder.textViewCount.text = dataSet[position].count.toString()
         holder.imageViewAva.setBackgroundColor(Color.parseColor(dataSet[position].color.toString()))
     }
 

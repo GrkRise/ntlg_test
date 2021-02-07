@@ -12,6 +12,7 @@ import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -32,19 +33,18 @@ class MainActivity : AppCompatActivity() {
     var itemsArr : ArrayList<Cell> = ArrayList()
     lateinit var rv : RecyclerView
     lateinit var adapter: CustomAdapter
+    lateinit var progress: ProgressBar
+    lateinit var tv : TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        setSupportActionBar(findViewById(R.id.toolbar))
+//        setSupportActionBar(findViewById(R.id.toolbar))
 
-        val tv = findViewById<TextView>(R.id.intro)
-        val originalText = tv.text
 
-        val spannable = SpannableString(originalText)
-        spannable.setSpan(ForegroundColorSpan(Color.BLACK), 0, 8, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
-        tv.text = spannable
+        progress = findViewById<ProgressBar>(R.id.load_bar)
+        progress.visibility = ProgressBar.VISIBLE
 
         val dividerItemDecoration = DividerItemDecoration(this, RecyclerView.VERTICAL)
         dividerItemDecoration.setDrawable(this.getDrawable(R.drawable.item_decor)!!)
@@ -68,6 +68,16 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("LongLogTag")
     private fun ParseJSON()
     {
+
+        tv = findViewById<TextView>(R.id.intro)
+        val originalText = tv.text
+
+        val spannable = SpannableString(originalText)
+        spannable.setSpan(ForegroundColorSpan(Color.BLACK), 0, 8, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        tv.text = spannable
+
+
         val retrofit = Retrofit.Builder()
                 .baseUrl("https://raw.githubusercontent.com")
                 .addConverterFactory(GsonConverterFactory.create())
@@ -94,7 +104,7 @@ class MainActivity : AppCompatActivity() {
                                 count +=  items[i].groups!![j].items!!.size
                             }
 
-                            val color = items[i].direction!!.badge!!.color
+                            val color = items[i].direction!!.badge!!.bgColor
 
 
                             val model = Cell(title, count, color)
@@ -103,10 +113,14 @@ class MainActivity : AppCompatActivity() {
 
                             adapter = CustomAdapter(itemsArr)
                             adapter.notifyDataSetChanged()
+                            progress.visibility = ProgressBar.INVISIBLE
+                            tv.visibility = TextView.VISIBLE
+
                         }
                     }
 
                     rv.adapter = adapter
+                    rv.visibility = RecyclerView.VISIBLE
                 }
 
                 else{

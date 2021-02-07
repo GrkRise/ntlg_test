@@ -21,8 +21,8 @@ data class Group(
 
 data class Badge(
         var text : String? = null,
-        var color: Color? = null,
-        var bgColor: Color? = null
+        var color: String? = null,
+        var bgColor: String? = null
 )
 
 data class Item(
